@@ -9,7 +9,7 @@ app.get('/', function (req, res) {
   res.send('Hello World!');
 });
 
-app.get('/api', async (req, res, next) => {
+app.get('/api/:filename', async (req, res, next) => {
   aws.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_KEY,
@@ -18,8 +18,7 @@ app.get('/api', async (req, res, next) => {
   })
 
   const s3 = new aws.S3({ });
-  const filename = '1024px-Taipei_Metro_official_map_optimised.png';
-  var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: filename };
+  var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: req.params.filename };
 
   s3.getObject(params, function (err, data) {
     if (err) {
