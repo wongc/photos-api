@@ -18,7 +18,7 @@ app.get('/api/:filename', async (req, res, next) => {
   })
 
   const s3 = new aws.S3({ });
-  var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: req.params.filename };
+  var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `2021 Forster/${req.params.filename}` };
 
   s3.getObject(params, function (err, data) {
     if (err) {
