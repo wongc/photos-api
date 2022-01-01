@@ -1,13 +1,36 @@
 const aws = require('aws-sdk');
 const express = require('express');
-// const cors = require("cors");
+const cors = require("cors");
 const app = express();
 
-// app.use(cors());
+app.use(cors());
 
 app.get('/', function (req, res) {
   res.send('Hello World!');
 });
+
+app.get('/api/listfolders', async (req, res, next) => {
+  aws.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_KEY,
+  })
+
+  const s3 = new aws.S3({ });
+  var params = { Bucket: process.env.AWS_BUCKET_NAME };
+
+  s3.listObjectsV2(params, function (err, data) {
+    if (err) {
+      res.status(200);
+      res.end('Error Fetching Folders');
+    }
+    else {
+      const folders = data.Contents.filter(k => k.Size === 0)
+      const result = []
+      folders.map(val => result.push(val.Key.split('/')[0]));
+      res.send(result);
+    }
+  });
+})
 
 app.get('/api/:filename', async (req, res, next) => {
   aws.config.update({
@@ -36,4 +59,3 @@ app.get('/api/:filename', async (req, res, next) => {
 app.listen(8000, function () {
   console.log('Listening to Port 8000');
 });
-
