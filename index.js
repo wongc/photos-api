@@ -8,7 +8,7 @@ require("dotenv").config();
 app.use(cors());
 
 app.get('/', function (req, res) {
-  res.send('Hello World!');
+  res.send('Invalid API call');
 });
 
 app.get('/api/listfolders', async (req, res, next) => {
@@ -18,7 +18,7 @@ app.get('/api/listfolders', async (req, res, next) => {
   })
 
   const s3 = new aws.S3({ });
-  var params = { Bucket: process.env.AWS_BUCKET_NAME };
+  const params = { Bucket: process.env.AWS_BUCKET_NAME };
 
   s3.listObjectsV2(params, function (err, data) {
     if (err) {
@@ -28,12 +28,14 @@ app.get('/api/listfolders', async (req, res, next) => {
       const folders = data.Contents.filter(k => k.Size === 0)
       const result = []
       folders.map(val => result.push(val.Key.split('/')[0]));
-      res.status(200).json(result).end();
+      res.status(200);
+      res.json(result);
+      res.end();
     }
   });
 })
 
-app.get('/api/:filename', async (req, res, next) => {
+app.get('/api/:folder/:filename', async (req, res, next) => {
   aws.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_KEY,
@@ -42,17 +44,19 @@ app.get('/api/:filename', async (req, res, next) => {
   })
 
   const s3 = new aws.S3({ });
-  var params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `2021 Forster/${req.params.filename}` };
+  const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `${decodeURIComponent(req.params.folder)}/${req.params.filename}` };
 
   s3.getObject(params, function (err, data) {
     if (err) {
-      res.status(200);
-      res.end('Error Fetching File');
+      res.status(404);
+      res.end(err.message);
     }
     else {
+      res.status(200);
       res.attachment(params.Key); // Set Filename
       res.type(data.ContentType); // Set FileType
       res.send(data.Body);        // Send File Buffer
+      res.end();
     }
   });
 })
