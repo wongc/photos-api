@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require("cors");
 const app = express();
 
+require("dotenv").config();
+
 app.use(cors());
 
 app.get('/', function (req, res) {
@@ -20,14 +22,13 @@ app.get('/api/listfolders', async (req, res, next) => {
 
   s3.listObjectsV2(params, function (err, data) {
     if (err) {
-      res.status(200);
-      res.end('Error Fetching Folders');
-    }
-    else {
+      res.status(404);
+      res.end(err.message);
+    } else {
       const folders = data.Contents.filter(k => k.Size === 0)
       const result = []
       folders.map(val => result.push(val.Key.split('/')[0]));
-      res.send(result);
+      res.status(200).json(result).end();
     }
   });
 })
