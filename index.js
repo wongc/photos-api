@@ -35,6 +35,32 @@ app.get('/api/listfolders', async (req, res, next) => {
   });
 })
 
+app.get('/api/:media', async (req, res, next) => {
+  aws.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_KEY,
+    // signatureVersion: config.signature_version,
+    // region: config.region
+  })
+
+  const s3 = new aws.S3({ });
+  const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `${req.params.media}/${req.params.media}.json` };
+
+  s3.getObject(params, function (err, data) {
+    if (err) {
+      res.status(404);
+      res.end(err.message);
+    }
+    else {
+      res.status(200);
+      res.attachment(params.Key); // Set Filename
+      res.type(data.ContentType); // Set FileType
+      res.send(data.Body);        // Send File Buffer
+      res.end();
+    }
+  });
+})
+
 app.get('/api/:folder/:filename', async (req, res, next) => {
   aws.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -44,7 +70,7 @@ app.get('/api/:folder/:filename', async (req, res, next) => {
   })
 
   const s3 = new aws.S3({ });
-  const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `${decodeURIComponent(req.params.folder)}/${req.params.filename}` };
+  const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `${req.params.folder}/${req.params.filename}` };
 
   s3.getObject(params, function (err, data) {
     if (err) {
