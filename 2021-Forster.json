@@ -1,12 +1,12 @@
 [
   {
-    "thumb": "http://localhost:8000/api/2021-Forster/1024px-Taipei_Metro_official_map_optimised.png",
-    "src": "http://localhost:8000/api/2021-Forster/1024px-Taipei_Metro_official_map_optimised.png",
+    "thumb": "https://photos-api-1.wongc.repl.co/api/2021-Forster/1024px-Taipei_Metro_official_map_optimised.png",
+    "src": "https://photos-api-1.wongc.repl.co/api/2021-Forster/1024px-Taipei_Metro_official_map_optimised.png",
     "caption": "Taipei Metro"
   },
   {
-    "thumb": "http://localhost:8000/api/2021-Forster/Screen-Shot-2021-12-16-at-11.15.11-am.png",
-    "src": "http://localhost:8000/api/2021-Forster/Screen-Shot-2021-12-16-at-11.15.11-am.png",
+    "thumb": "https://photos-api-1.wongc.repl.co/api/2021-Forster/Screen-Shot-2021-12-16-at-11.15.11-am.png",
+    "src": "https://photos-api-1.wongc.repl.co/api/2021-Forster/Screen-Shot-2021-12-16-at-11.15.11-am.png",
     "caption": "Cinema seat availability"
   }
 ]
