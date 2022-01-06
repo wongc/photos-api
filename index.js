@@ -26,8 +26,24 @@ app.get('/api/listfolders', async (req, res, next) => {
       res.end(err.message);
     } else {
       const folders = data.Contents.filter(k => k.Size === 0)
+      const resultFolders = []
+      folders.map(val => resultFolders.push(val.Key.split('/')[0]));
+      
       const result = []
-      folders.map(val => result.push(val.Key.split('/')[0]));
+      resultFolders.map(folder => {
+        const files = data.Contents.filter(k => k.Size !== 0)
+        const imageFiles = []
+        files.map(val => {
+          const file = val.Key
+          const fileExt = val.Key.split('.')
+          if (file.includes(folder) && ['jpg', 'jpeg', 'png', 'gif'].find(ext => ext === fileExt[fileExt.length - 1].toLowerCase())) {
+            imageFiles.push(val.Key);
+          }
+        })
+        const shuffledImageFiles = imageFiles.sort((a, b) => 0.5 - Math.random());
+        result.push({folder, image: shuffledImageFiles[0]})
+      })
+
       res.status(200);
       res.json(result);
       res.end();
@@ -39,8 +55,6 @@ app.get('/api/:media', async (req, res, next) => {
   aws.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_KEY,
-    // signatureVersion: config.signature_version,
-    // region: config.region
   })
 
   const s3 = new aws.S3({ });
@@ -50,8 +64,7 @@ app.get('/api/:media', async (req, res, next) => {
     if (err) {
       res.status(404);
       res.end(err.message);
-    }
-    else {
+    } else {
       res.status(200);
       res.attachment(params.Key); // Set Filename
       res.type(data.ContentType); // Set FileType
@@ -65,8 +78,6 @@ app.get('/api/:folder/:filename', async (req, res, next) => {
   aws.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_KEY,
-    // signatureVersion: config.signature_version,
-    // region: config.region
   })
 
   const s3 = new aws.S3({ });
@@ -76,8 +87,7 @@ app.get('/api/:folder/:filename', async (req, res, next) => {
     if (err) {
       res.status(404);
       res.end(err.message);
-    }
-    else {
+    } else {
       res.status(200);
       res.attachment(params.Key); // Set Filename
       res.type(data.ContentType); // Set FileType
