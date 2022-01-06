@@ -2,10 +2,15 @@ const aws = require('aws-sdk');
 const express = require('express');
 const cors = require("cors");
 const app = express();
+const corsOptions = {
+  origin: 'http://localhost:8080',
+  optionsSuccessStatus: 200,  // For legacy browser support
+  methods: "GET"
+}
 
 require("dotenv").config();
 
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.get('/', function (req, res) {
   res.send('Invalid API call');
