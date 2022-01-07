@@ -1,9 +1,10 @@
 const aws = require('aws-sdk');
 const express = require('express');
+const bodyParser = require('body-parser');
 const cors = require("cors");
 const app = express();
 const corsOptions = {
-  origin: 'http://camping.jarrodcallum.com',
+  origin: ['http://camping.jarrodcallum.com'],
   optionsSuccessStatus: 200,  // For legacy browser support
   methods: "GET"
 }
@@ -11,10 +12,26 @@ const corsOptions = {
 require("dotenv").config();
 
 app.use(cors(corsOptions));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 app.get('/', function (req, res) {
   res.send('Invalid API call');
 });
+
+app.post('/api/validateAccessCode', async (req, res, next) => {
+  const validAccessCodes = process.env.ACCESS_CODE.split(',');
+  const accessCode = req.body.accessCode
+  if (validAccessCodes.includes(accessCode)) {
+    res.status(200);
+    res.send({ result: 'ok'});
+    res.end();
+  } else {
+    res.status(404);
+    res.send({ error: 'Invalid access code!' });
+    res.end();
+  }
+})
 
 app.get('/api/listfolders', async (req, res, next) => {
   aws.config.update({
