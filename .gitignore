@@ -23,6 +23,6 @@ pnpm-debug.log*
 *.sw?
 
 # aws s3 credentials
-new_user_credentials.csv
-nodemon.json
+package-lock.json
 .env
+combined.log
