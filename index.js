@@ -5,9 +5,10 @@ const cors = require("cors");
 const app = express();
 const winston = require('winston');
 const expressWinston = require("express-winston");
+const requestIp = require('request-ip');
 
 const corsOptions = {
-  origin: ['http://camping.jarrodcallum.com'],
+  origin: ['http://camping.jarrodcallum.com', 'http://localhost:8080'],
   optionsSuccessStatus: 200,  // For legacy browser support
   methods: "GET"
 }
@@ -27,7 +28,7 @@ const timezoned = () => {
 const expressFormat = winston.format.combine(
   winston.format.timestamp({format: timezoned }),
   winston.format.printf(info => {
-      return `{"timestamp": "${info.timestamp}", "message": "${info.message}", "remoteIp": "${info.meta.httpRequest.remoteIp}", "userAgent": "${info.meta.httpRequest.userAgent}", "referrer": "${info.meta.httpRequest.referrer}"}`;
+      return `{"timestamp": "${info.timestamp}", "message": "${info.message}", "clientIp": "${info.meta.httpRequest.clientIp}", "remoteIp": "${info.meta.httpRequest.remoteIp}", "userAgent": "${info.meta.httpRequest.userAgent}", "referrer": "${info.meta.httpRequest.referrer}"}`;
   })
 )
 
@@ -49,6 +50,7 @@ app.use(expressWinston.logger({
     const meta = {}
     if (req) {
       meta.httpRequest = httpRequest
+      httpRequest.clientIp = requestIp.getClientIp(req)
       httpRequest.remoteIp = req.ip.indexOf(':') >= 0 ? req.ip.substring(req.ip.lastIndexOf(':') + 1) : req.ip   // just ipv4
       httpRequest.userAgent = req.get('User-Agent')
       httpRequest.referrer = req.get('Referrer')
