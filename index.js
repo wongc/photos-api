@@ -3,6 +3,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require("cors");
 const app = express();
+const winston = require('winston');
+const expressWinston = require("express-winston");
+
 const corsOptions = {
   origin: ['http://camping.jarrodcallum.com'],
   optionsSuccessStatus: 200,  // For legacy browser support
@@ -14,6 +17,45 @@ require("dotenv").config();
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
+const timezoned = () => {
+  return new Date().toLocaleString('en-AU', {
+      timeZone: 'Australia/Sydney'
+  });
+}
+
+const expressFormat = winston.format.combine(
+  winston.format.timestamp({format: timezoned }),
+  winston.format.printf(info => {
+      return `{"timestamp": "${info.timestamp}", "message": "${info.message}", "remoteIp": "${info.meta.httpRequest.remoteIp}", "userAgent": "${info.meta.httpRequest.userAgent}", "referrer": "${info.meta.httpRequest.referrer}"}`;
+  })
+)
+
+app.use(expressWinston.logger({
+  transports: [
+    new winston.transports.File({ filename: 'combined.log' })
+  ],
+  // format: winston.format.combine(
+  //   winston.format.timestamp({format: timezoned }),
+  //   winston.format.json()
+  // ),
+  format: expressFormat,
+  meta: true,
+  msg: "HTTP  ",
+  expressFormat: true,
+  colorize: false,
+  dynamicMeta: (req, res) => {
+    const httpRequest = {}
+    const meta = {}
+    if (req) {
+      meta.httpRequest = httpRequest
+      httpRequest.remoteIp = req.ip.indexOf(':') >= 0 ? req.ip.substring(req.ip.lastIndexOf(':') + 1) : req.ip   // just ipv4
+      httpRequest.userAgent = req.get('User-Agent')
+      httpRequest.referrer = req.get('Referrer')
+    }
+    return meta
+  }
+}));
 
 function verifyToken(req, res, next) {
   const validAccessCodes = process.env.ACCESS_CODE.split(',');
