@@ -8,7 +8,7 @@ const expressWinston = require("express-winston");
 const requestIp = require('request-ip');
 
 const corsOptions = {
-  origin: ['http://camping.jarrodcallum.com', 'http://localhost:8080'],
+  origin: ['http://camping.jarrodcallum.com'],
   optionsSuccessStatus: 200,  // For legacy browser support
   methods: "GET"
 }
