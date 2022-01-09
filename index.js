@@ -15,6 +15,31 @@ app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+function verifyToken(req, res, next) {
+  const validAccessCodes = process.env.ACCESS_CODE.split(',');
+  
+  const bearerHeader = req.headers['authorization'];
+  if (bearerHeader) {
+    const bearer = bearerHeader.split(' ');
+    const bearerToken = bearer[1];
+    if (validAccessCodes.includes(bearerToken)) {
+      req.token = bearerToken;
+      next();
+      return;
+    } 
+  }
+
+  const token = req.query.token;
+  if (validAccessCodes.includes(token)) {
+    req.token = token;
+    next();
+    return;
+  } else {
+    res.sendStatus(403);
+    res.end();
+  }
+}
+
 app.get('/', function (req, res) {
   res.send('Invalid API call');
 });
@@ -33,7 +58,7 @@ app.post('/api/validateAccessCode', async (req, res, next) => {
   }
 })
 
-app.get('/api/listfolders', async (req, res, next) => {
+app.get('/api/listfolders', verifyToken, async (req, res, next) => {
   aws.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_KEY,
@@ -57,7 +82,7 @@ app.get('/api/listfolders', async (req, res, next) => {
         files.every(val => { 
           const fileExt = val.Key.split('.')
           if (fileExt[0] === `${folder}/${folder}` && fileExt[1].toLowerCase() !== 'json') {
-            result.push({folder, image: val.Key})
+            result.push({folder, image: `${val.Key}?token=${req.token}`})
             return false
           }
           return true
@@ -70,7 +95,7 @@ app.get('/api/listfolders', async (req, res, next) => {
   });
 })
 
-app.get('/api/:media', async (req, res, next) => {
+app.get('/api/:media', verifyToken, async (req, res, next) => {
   aws.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_KEY,
@@ -98,8 +123,8 @@ app.get('/api/:media', async (req, res, next) => {
           const fileExt = val.Key.split('.')
           if (file.includes(req.params.media) && ['jpg', 'jpeg', 'png', 'gif'].find(ext => ext === fileExt[fileExt.length - 1].toLowerCase())) {
             result.push({
-              thumb: `${process.env.BASE_URI}/api/${val.Key}`,
-              src: `${process.env.BASE_URI}/api/${val.Key}`,
+              thumb: `${process.env.BASE_URI}/api/${val.Key}?token=${req.token}`,
+              src: `${process.env.BASE_URI}/api/${val.Key}?token=${req.token}`,
               // caption: val.Key.split('/')[1].split('.')[0].replace(/_|\+/g, ' ')
               caption: val.Key.split('/')[1].split('.')[0]
             })
@@ -113,7 +138,7 @@ app.get('/api/:media', async (req, res, next) => {
   });
 })
 
-app.get('/api/:folder/:filename', async (req, res, next) => {
+app.get('/api/:folder/:filename', verifyToken, async (req, res, next) => {
   aws.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_KEY,
