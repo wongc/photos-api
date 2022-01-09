@@ -28,7 +28,7 @@ const timezoned = () => {
 const expressFormat = winston.format.combine(
   winston.format.timestamp({format: timezoned }),
   winston.format.printf(info => {
-      return `{"timestamp": "${info.timestamp}", "message": "${info.message}", "clientIp": "${info.meta.httpRequest.clientIp}", "remoteIp": "${info.meta.httpRequest.remoteIp}", "userAgent": "${info.meta.httpRequest.userAgent}", "referrer": "${info.meta.httpRequest.referrer}"}`;
+      return `{"timestamp": "${info.timestamp}", "message": "${info.message}", "clientIp": "${info.meta.httpRequest.clientIp}", "userAgent": "${info.meta.httpRequest.userAgent}", "referrer": "${info.meta.httpRequest.referrer}"}`;
   })
 )
 
@@ -51,7 +51,6 @@ app.use(expressWinston.logger({
     if (req) {
       meta.httpRequest = httpRequest
       httpRequest.clientIp = requestIp.getClientIp(req)
-      httpRequest.remoteIp = req.ip.indexOf(':') >= 0 ? req.ip.substring(req.ip.lastIndexOf(':') + 1) : req.ip   // just ipv4
       httpRequest.userAgent = req.get('User-Agent')
       httpRequest.referrer = req.get('Referrer')
     }
