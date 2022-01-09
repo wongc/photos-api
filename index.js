@@ -54,18 +54,15 @@ app.get('/api/listfolders', async (req, res, next) => {
       const result = []
       resultFolders.map(folder => {
         const files = data.Contents.filter(k => k.Size !== 0)
-        const imageFiles = []
-        files.map(val => {
-          const file = val.Key
+        files.every(val => { 
           const fileExt = val.Key.split('.')
-          if (file.includes(folder) && ['jpg', 'jpeg', 'png', 'gif'].find(ext => ext === fileExt[fileExt.length - 1].toLowerCase())) {
-            imageFiles.push(val.Key);
+          if (fileExt[0] === `${folder}/${folder}` && fileExt[1].toLowerCase() !== 'json') {
+            result.push({folder, image: val.Key})
+            return false
           }
-        })
-        const shuffledImageFiles = imageFiles.sort((a, b) => 0.5 - Math.random());
-        result.push({folder, image: shuffledImageFiles[0]})
+          return true
+        });
       })
-
       res.status(200);
       res.json(result);
       res.end();
@@ -79,20 +76,40 @@ app.get('/api/:media', async (req, res, next) => {
     secretAccessKey: process.env.AWS_SECRET_KEY,
   })
 
-  const s3 = new aws.S3({ });
-  const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `${req.params.media}/${req.params.media}.json` };
-
+  let mediaJson = []
+  let s3 = new aws.S3({ });
+  let params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `${req.params.media}/${req.params.media}.json` };
   s3.getObject(params, function (err, data) {
-    if (err) {
-      res.status(404);
-      res.end(err.message);
-    } else {
-      res.status(200);
-      res.attachment(params.Key); // Set Filename
-      res.type(data.ContentType); // Set FileType
-      res.send(data.Body);        // Send File Buffer
-      res.end();
+    if (data) {
+      mediaJson = JSON.parse(data.Body.toString())
     }
+
+    params = { Bucket: process.env.AWS_BUCKET_NAME };
+    s3.listObjectsV2(params, function (err, data) {
+      if (err) {
+        res.status(404);
+        res.json([]);
+        res.end(err.message);
+      } else {
+        const result = []
+        const files = data.Contents.filter(k => k.Size !== 0)
+        files.map(val => {
+          const file = val.Key
+          const fileExt = val.Key.split('.')
+          if (file.includes(req.params.media) && ['jpg', 'jpeg', 'png', 'gif'].find(ext => ext === fileExt[fileExt.length - 1].toLowerCase())) {
+            result.push({
+              thumb: `${process.env.BASE_URI}/api/${val.Key}`,
+              src: `${process.env.BASE_URI}/api/${val.Key}`,
+              // caption: val.Key.split('/')[1].split('.')[0].replace(/_|\+/g, ' ')
+              caption: val.Key.split('/')[1].split('.')[0]
+            })
+          }
+        })
+        res.status(200);
+        res.json(mediaJson.concat(result));
+        res.end();
+      }
+    });
   });
 })
 
