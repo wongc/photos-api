@@ -123,8 +123,7 @@ app.get('/api/listfolders', verifyToken, async (req, res, next) => {
       resultFolders.map(folder => {
         const files = data.Contents.filter(k => k.Size !== 0)
         files.every(val => { 
-          const fileExt = val.Key.split('.')
-          if (fileExt[0] === `${folder}/${folder}` && fileExt[1].toLowerCase() !== 'json') {
+          if (val.Key.split('.')[0] === `${folder}/${folder}`) {
             result.push({folder, image: `${val.Key}?token=${req.token}`})
             return false
           }
@@ -144,39 +143,52 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
     secretAccessKey: process.env.AWS_SECRET_KEY,
   })
 
-  let mediaJson = []
-  let s3 = new aws.S3({ });
-  let params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `${req.params.media}/${req.params.media}.json` };
-  s3.getObject(params, function (err, data) {
-    if (data) {
-      mediaJson = JSON.parse(data.Body.toString())
-    }
+  const s3 = new aws.S3({ });
+  const params = { Bucket: process.env.AWS_BUCKET_NAME };
 
-    params = { Bucket: process.env.AWS_BUCKET_NAME };
-    s3.listObjectsV2(params, function (err, data) {
-      if (err) {
-        res.status(404);
-        res.json([]);
-        res.end(err.message);
-      } else {
-        const result = []
-        const files = data.Contents.filter(k => k.Size !== 0)
-        files.map(val => {
-          const file = val.Key
-          const fileExt = val.Key.split('.')
-          if (file.includes(req.params.media) && ['jpg', 'jpeg', 'png', 'gif'].find(ext => ext === fileExt[fileExt.length - 1].toLowerCase())) {
+  s3.listObjectsV2(params, function (err, data) {
+    if (err) {
+      res.status(404);
+      res.json([]);
+      res.end(err.message);
+    } else {
+      const result = []
+      const files = data.Contents.filter(k => k.Size !== 0)
+      let mp4Thumbnail = null
+      files.map(val => {
+        const file = val.Key
+        const fileExt = val.Key.split('.')
+        if (file.includes(req.params.media)
+          && ['mp4', 'jpg', 'jpeg', 'png', 'gif'].find(ext => ext === fileExt[fileExt.length - 1].toLowerCase())) {
+          if ('mp4' === fileExt[fileExt.length - 1].toLowerCase()) {
             result.push({
-              thumb: `${process.env.BASE_URI}/api/${val.Key}?token=${req.token}`,
-              src: `${process.env.BASE_URI}/api/${val.Key}?token=${req.token}`,
-              caption: val.Key.split('/')[1].split('.')[0].replace(/-|_|\+/g, ' ')
+              thumb: `${process.env.BASE_URI}/api/${file.split('.')[0]}.png?token=${req.token}`,
+              sources: [
+                {
+                  src: `${process.env.BASE_URI}/api/${file}?token=${req.token}`,
+                  type: 'video/mp4'
+                }
+              ],
+              type: 'video',
+              caption: file.split('/')[1].split('.')[0].replace(/-|_|\+/g, ' '),
+              width: 800,
+              height: 600
             })
+            mp4Thumbnail = `${file.split('.')[0]}.png`
+          } else if (file !== mp4Thumbnail) {
+            result.push({
+              thumb: `${process.env.BASE_URI}/api/${file}?token=${req.token}`,
+              src: `${process.env.BASE_URI}/api/${file}?token=${req.token}`,
+              caption: file.split('/')[1].split('.')[0].replace(/-|_|\+/g, ' ')
+            })
+            mp4Thumbnail = null
           }
-        })
-        res.status(200);
-        res.json(mediaJson.concat(result));
-        res.end();
-      }
-    });
+        }
+      })
+      res.status(200);
+      res.json(result);
+      res.end();
+    }
   });
 })
 
