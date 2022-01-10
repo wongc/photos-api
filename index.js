@@ -168,8 +168,7 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
             result.push({
               thumb: `${process.env.BASE_URI}/api/${val.Key}?token=${req.token}`,
               src: `${process.env.BASE_URI}/api/${val.Key}?token=${req.token}`,
-              // caption: val.Key.split('/')[1].split('.')[0].replace(/_|\+/g, ' ')
-              caption: val.Key.split('/')[1].split('.')[0]
+              caption: val.Key.split('/')[1].split('.')[0].replace(/-|_|\+/g, ' ')
             })
           }
         })
