@@ -173,7 +173,8 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
               type: 'video',
               caption: file.split('/')[1].split('.')[0].replace(regExPattern, ' '),
               width: 800,
-              height: 600
+              height: 600,
+              autoplay: true
             })
             mp4Thumbnail = `${file.split('.')[0]}.png`
           } else if (file !== mp4Thumbnail) {
