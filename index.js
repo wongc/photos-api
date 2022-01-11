@@ -158,6 +158,7 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
       files.map(val => {
         const file = val.Key
         const fileExt = val.Key.split('.')
+        const regExPattern = /_|\+/g
         if (file.includes(req.params.media)
           && ['mp4', 'jpg', 'jpeg', 'png', 'gif'].find(ext => ext === fileExt[fileExt.length - 1].toLowerCase())) {
           if ('mp4' === fileExt[fileExt.length - 1].toLowerCase()) {
@@ -170,7 +171,7 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
                 }
               ],
               type: 'video',
-              caption: file.split('/')[1].split('.')[0].replace(/-|_|\+/g, ' '),
+              caption: file.split('/')[1].split('.')[0].replace(regExPattern, ' '),
               width: 800,
               height: 600
             })
@@ -179,7 +180,7 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
             result.push({
               thumb: `${process.env.BASE_URI}/api/${file}?token=${req.token}`,
               src: `${process.env.BASE_URI}/api/${file}?token=${req.token}`,
-              caption: file.split('/')[1].split('.')[0].replace(/-|_|\+/g, ' ')
+              caption: file.split('/')[1].split('.')[0].replace(regExPattern, ' ')
             })
             mp4Thumbnail = null
           }
