@@ -105,14 +105,12 @@ async function fetchPlaylist(pageToken, prevResult) {
   });
 
   response.data.items.forEach(video => {
-    if ('Private video' !== video.snippet.title) {
-      result.push({
-        "type": "youtube",
-        "id": video.snippet.resourceId.videoId,
-        "thumb": video.snippet.thumbnails.high.url,
-        "caption": video.snippet.title
-      });
-    }
+    result.push({
+      "type": "youtube",
+      "id": video.snippet.resourceId.videoId,
+      "thumb": video.snippet.thumbnails.high.url,
+      "caption": video.snippet.title
+    });
   });
 
   if (response.data.nextPageToken) {
