@@ -8,46 +8,40 @@ const expressWinston = require("express-winston");
 const requestIp = require('request-ip');
 const { google } = require('googleapis');
 
+require("dotenv").config();
+
+// Remove localhost in non-dev environments
 const corsOptions = {
   origin: ['http://localhost:8080', 'http://camping.jarrodcallum.com', 'http://jarrodcallum.com'],
   optionsSuccessStatus: 200,  // For legacy browser support
   methods: "GET"
 }
 
-require("dotenv").config();
-
-const playlistId = "PL-u_D1dQezUPQF2clbbBOP2UCakQ0WWW6";
-
+// YouTube library
+const playlistId = "PL1_Jq7PzDawnEbcc44bUQnzAeZ3ODmORp";
 const youtube = google.youtube({
     version: "v3",
     auth: process.env.GOOGLE_API_KEY
 });
 
-app.use(cors(corsOptions));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-const timezoned = () => {
-  return new Date().toLocaleString('en-AU', {
-      timeZone: 'Australia/Sydney'
-  });
-}
-
+// Winston logger
 const expressFormat = winston.format.combine(
-  winston.format.timestamp({format: timezoned }),
+  winston.format.timestamp({
+    format: new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })
+  }),
   winston.format.printf(info => {
       return `{"timestamp": "${info.timestamp}", "message": "${info.message}", "clientIp": "${info.meta.httpRequest.clientIp}", "userAgent": "${info.meta.httpRequest.userAgent}", "referrer": "${info.meta.httpRequest.referrer}"}`;
   })
 )
 
+app.use(cors(corsOptions));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
 app.use(expressWinston.logger({
   transports: [
     new winston.transports.File({ filename: 'combined.log' })
   ],
-  // format: winston.format.combine(
-  //   winston.format.timestamp({format: timezoned }),
-  //   winston.format.json()
-  // ),
   format: expressFormat,
   meta: true,
   msg: "HTTP  ",
@@ -66,6 +60,7 @@ app.use(expressWinston.logger({
   }
 }));
 
+// Verify access token function
 function verifyToken(req, res, next) {
   const validAccessCodes = process.env.ACCESS_CODE.split(',');
   
@@ -91,8 +86,9 @@ function verifyToken(req, res, next) {
   }
 }
 
+// Fetch YouTube playlist function
 async function fetchPlaylist(pageToken, prevResult) {
-  let result = [];
+  const result = [];
   if (prevResult) result = prevResult;
 
   const response = await youtube.playlistItems.list({
