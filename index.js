@@ -8,7 +8,7 @@ const expressWinston = require("express-winston");
 const requestIp = require('request-ip');
 
 const corsOptions = {
-  origin: ['http://camping.jarrodcallum.com', 'http://jarrodcallum.com'],
+  origin: ['http://localhost:8080', 'http://camping.jarrodcallum.com', 'http://jarrodcallum.com'],
   optionsSuccessStatus: 200,  // For legacy browser support
   methods: "GET"
 }
@@ -152,7 +152,20 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
       res.json([]);
       res.end(err.message);
     } else {
-      const result = []
+      const result = [
+        {
+          "type": "youtube",
+          "id": "sSDXywRfspw",
+          "thumb": "Going_down_the_sand_dune_-_Amy.png",
+          "caption": "Going down the sand dune - Amy"
+        },
+        {
+          "type": "youtube",
+          "id": "QHHO8_rClyE",
+          "thumb": "Going_down_the_sand_dune_-_Colin.png",
+          "caption": "Going down the sand dune - Colin"
+        },
+      ]
       const files = data.Contents.filter(k => k.Size !== 0)
       let mp4Thumbnail = null
       files.map(val => {
