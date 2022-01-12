@@ -33,6 +33,13 @@ const expressFormat = winston.format.combine(
   })
 )
 
+// AWS config
+aws.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_KEY,
+})
+const s3 = new aws.S3({ });
+
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -132,12 +139,6 @@ app.post('/api/validateAccessCode', async (req, res, next) => {
 })
 
 app.get('/api/listfolders', verifyToken, async (req, res, next) => {
-  aws.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_KEY,
-  })
-
-  const s3 = new aws.S3({ });
   const params = { Bucket: process.env.AWS_BUCKET_NAME };
 
   s3.listObjectsV2(params, function (err, data) {
@@ -168,12 +169,6 @@ app.get('/api/listfolders', verifyToken, async (req, res, next) => {
 })
 
 app.get('/api/:media', verifyToken, async (req, res, next) => {
-  aws.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_KEY,
-  })
-
-  const s3 = new aws.S3({ });
   const params = { Bucket: process.env.AWS_BUCKET_NAME };
 
   s3.listObjectsV2(params, async function (err, data) {
@@ -229,12 +224,6 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
 })
 
 app.get('/api/:folder/:filename', verifyToken, async (req, res, next) => {
-  aws.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_KEY,
-  })
-
-  const s3 = new aws.S3({ });
   const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `${req.params.folder}/${req.params.filename}` };
 
   s3.getObject(params, function (err, data) {
