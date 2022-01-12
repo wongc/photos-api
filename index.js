@@ -18,7 +18,6 @@ const corsOptions = {
 }
 
 // YouTube library
-const playlistId = "PL1_Jq7PzDawnEbcc44bUQnzAeZ3ODmORp";
 const youtube = google.youtube({
     version: "v3",
     auth: process.env.GOOGLE_API_KEY
@@ -92,7 +91,7 @@ async function fetchPlaylist(pageToken, prevResult) {
   if (prevResult) result = prevResult;
 
   const response = await youtube.playlistItems.list({
-    playlistId: playlistId,
+    playlistId: process.env.YOUTUBE_PLAYLIST_ID,
     part: "snippet",
     pageToken: pageToken,
     maxResults: 50
