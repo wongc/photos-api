@@ -12,7 +12,7 @@ require("dotenv").config();
 
 // Remove localhost in non-dev environments
 const corsOptions = {
-  origin: ['http://localhost:8080', 'http://camping.jarrodcallum.com', 'http://jarrodcallum.com'],
+  origin: ['http://camping.jarrodcallum.com', 'http://jarrodcallum.com'],
   optionsSuccessStatus: 200,  // For legacy browser support
   methods: "GET"
 }
