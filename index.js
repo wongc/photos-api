@@ -184,7 +184,7 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
       files.map(val => {
         const file = val.Key
         const fileExt = val.Key.split('.')
-        const regExPattern = /_|\+/g
+        const regExPattern = /_|\+/g  // _ or + character
         if (file.includes(req.params.media)
           && ['mp4', 'jpg', 'jpeg', 'png', 'gif'].find(ext => ext === fileExt[fileExt.length - 1].toLowerCase())) {
           if ('mp4' === fileExt[fileExt.length - 1].toLowerCase()) {
@@ -214,7 +214,11 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
         }
       });
 
-      // TODO: Sort by caption alphabetically
+      result.sort((r1, r2) => {
+        var textA = r1.caption.toLowerCase()
+        var textB = r2.caption.toLowerCase()
+        return textA < textB ? -1 : textA > textB ? 1 : 0
+      })
 
       res.status(200);
       res.json(result);
