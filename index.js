@@ -6,6 +6,7 @@ const app = express();
 const winston = require('winston');
 const expressWinston = require("express-winston");
 const requestIp = require('request-ip');
+const { google } = require('googleapis');
 
 const corsOptions = {
   origin: ['http://localhost:8080', 'http://camping.jarrodcallum.com', 'http://jarrodcallum.com'],
@@ -14,6 +15,13 @@ const corsOptions = {
 }
 
 require("dotenv").config();
+
+const playlistId = "PL-u_D1dQezUPQF2clbbBOP2UCakQ0WWW6";
+
+const youtube = google.youtube({
+    version: "v3",
+    auth: process.env.GOOGLE_API_KEY
+});
 
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -83,6 +91,33 @@ function verifyToken(req, res, next) {
   }
 }
 
+async function fetchPlaylist(pageToken, prevResult) {
+  let result = [];
+  if (prevResult) result = prevResult;
+
+  const response = await youtube.playlistItems.list({
+    playlistId: playlistId,
+    part: "snippet",
+    pageToken: pageToken,
+    maxResults: 50
+  });
+
+  response.data.items.forEach(video => {
+    result.push({
+      "type": "youtube",
+      "id": video.snippet.resourceId.videoId,
+      "thumb": video.snippet.thumbnails.high.url,
+      "caption": video.snippet.title
+    });
+  });
+
+  if (response.data.nextPageToken) {
+    return await fetchPlaylist(response.data.nextPageToken, result);
+  } else {
+    return result;
+  }
+}
+
 app.get('/', function (req, res) {
   res.send('Invalid API call');
 });
@@ -146,26 +181,14 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
   const s3 = new aws.S3({ });
   const params = { Bucket: process.env.AWS_BUCKET_NAME };
 
-  s3.listObjectsV2(params, function (err, data) {
+  s3.listObjectsV2(params, async function (err, data) {
     if (err) {
       res.status(404);
       res.json([]);
       res.end(err.message);
     } else {
-      const result = [
-        {
-          "type": "youtube",
-          "id": "sSDXywRfspw",
-          "thumb": "Going_down_the_sand_dune_-_Amy.png",
-          "caption": "Going down the sand dune - Amy"
-        },
-        {
-          "type": "youtube",
-          "id": "QHHO8_rClyE",
-          "thumb": "Going_down_the_sand_dune_-_Colin.png",
-          "caption": "Going down the sand dune - Colin"
-        },
-      ]
+      const result = await fetchPlaylist();
+
       const files = data.Contents.filter(k => k.Size !== 0)
       let mp4Thumbnail = null
       files.map(val => {
@@ -199,7 +222,10 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
             mp4Thumbnail = null
           }
         }
-      })
+      });
+
+      // TODO: Sort by caption alphabetically
+
       res.status(200);
       res.json(result);
       res.end();
