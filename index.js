@@ -99,7 +99,7 @@ async function fetchPlaylist(playlistName, pageToken, prevResult) {
 
   let playlistId
   const playlists = await youtube.playlists.list({
-    channelId: 'UClP1OioTUXbsn-HJDZZLrmg',
+    channelId: process.env.YOUTUBE_CHANNEL_ID,
     part: 'snippet'
   });
   playlists.data.items.forEach(playlist => {
