@@ -97,32 +97,34 @@ async function fetchPlaylist(playlistName, pageToken, prevResult) {
   const result = [];
   if (prevResult) result = prevResult;
 
+  let playlistId
   const playlists = await youtube.playlists.list({
     channelId: 'UClP1OioTUXbsn-HJDZZLrmg',
     part: 'snippet'
   });
-  let playlistId
   playlists.data.items.forEach(playlist => {
     if (playlist.snippet.title === playlistName) {
       playlistId = playlist.id
     }
   })
 
-  const response = await youtube.playlistItems.list({
-    playlistId: playlistId,
-    part: "snippet",
-    pageToken: pageToken,
-    maxResults: 50
-  });
-
-  response.data.items.forEach(video => {
-    result.push({
-      "type": "youtube",
-      "id": video.snippet.resourceId.videoId,
-      "thumb": video.snippet.thumbnails.high.url,
-      "caption": video.snippet.title
+  if (playlistId) {
+    const response = await youtube.playlistItems.list({
+      playlistId: playlistId,
+      part: "snippet",
+      pageToken: pageToken,
+      maxResults: 50
     });
-  });
+  
+    response.data.items.forEach(video => {
+      result.push({
+        "type": "youtube",
+        "id": video.snippet.resourceId.videoId,
+        "thumb": video.snippet.thumbnails.high.url,
+        "caption": video.snippet.title
+      });
+    });
+  }
 
   if (response.data.nextPageToken) {
     return await fetchPlaylist(playlistName, response.data.nextPageToken, result);
