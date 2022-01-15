@@ -108,8 +108,9 @@ async function fetchPlaylist(playlistName, pageToken, prevResult) {
     }
   })
 
+  let response 
   if (playlistId) {
-    const response = await youtube.playlistItems.list({
+    response = await youtube.playlistItems.list({
       playlistId: playlistId,
       part: "snippet",
       pageToken: pageToken,
@@ -126,7 +127,7 @@ async function fetchPlaylist(playlistName, pageToken, prevResult) {
     });
   }
 
-  if (response.data.nextPageToken) {
+  if (response && response.data.nextPageToken) {
     return await fetchPlaylist(playlistName, response.data.nextPageToken, result);
   } else {
     return result;
