@@ -7,12 +7,14 @@ const winston = require('winston');
 const expressWinston = require("express-winston");
 const requestIp = require('request-ip');
 const { google } = require('googleapis');
+const moment = require('moment-timezone');
+const geoip = require('geoip-lite');
 
 require("dotenv").config();
 
 // Remove localhost in non-dev environments
 const corsOptions = {
-  origin: ['http://lytia.jarrodcallum.com', 'http://camping.jarrodcallum.com', 'http://jarrodcallum.com'],
+  origin: process.env.CORS_ORIGIN,
   optionsSuccessStatus: 200,  // For legacy browser support
   methods: "GET"
 }
@@ -26,10 +28,14 @@ const youtube = google.youtube({
 // Winston logger
 const expressFormat = winston.format.combine(
   winston.format.timestamp({
-    format: new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })
+    format: moment().tz('Australia/Sydney').format()
   }),
   winston.format.printf(info => {
-      return `{"timestamp": "${info.timestamp}", "message": "${info.message}", "clientIp": "${info.meta.httpRequest.clientIp}", "userAgent": "${info.meta.httpRequest.userAgent}", "referrer": "${info.meta.httpRequest.referrer}"}`;
+    const geo = geoip.lookup(info.meta.httpRequest.clientIp);
+    const country = `"country": "${geo && geo.country ? geo.country : ''}"`;
+    const city = `"city": "${geo && geo.city ? geo.city : ''}"`;
+    const timezone = `"timezone": "${geo && geo.timezone ? geo.timezone : ''}"`;
+    return `{"timestamp": "${info.timestamp}", "message": "${info.message}", "clientIp": "${info.meta.httpRequest.clientIp}", ${country}, ${city}, ${timezone}, "userAgent": "${info.meta.httpRequest.userAgent}", "referrer": "${info.meta.httpRequest.referrer}"}`;
   })
 )
 
