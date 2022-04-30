@@ -158,38 +158,40 @@ app.post('/api/validateAccessCode', async (req, res, next) => {
   }
 })
 
+// List all folders in each bucket
 app.get('/api/listfolders', verifyToken, async (req, res, next) => {
-  const params = { Bucket: process.env.AWS_BUCKET_NAME };
+  const result = []
+  const buckets = process.env.AWS_BUCKET_NAME.split(',')
 
-  s3.listObjectsV2(params, function (err, data) {
-    if (err) {
-      res.status(404);
-      res.end(err.message);
-    } else {
-      const folders = data.Contents.filter(k => k.Size === 0)
-      const resultFolders = []
-      folders.map(val => resultFolders.push(val.Key.split('/')[0]));
-      
-      const result = []
-      resultFolders.map(folder => {
-        const files = data.Contents.filter(k => k.Size !== 0)
-        files.every(val => { 
-          if (val.Key.split('.')[0] === `${folder}/${folder}`) {
-            result.push({folder, image: `${val.Key}?token=${req.token}`})
-            return false
-          }
-          return true
-        });
+  for (const index in buckets) {
+    const params = { Bucket: buckets[index].trim() }
+    const data = await s3.listObjectsV2(params).promise()
+
+    const folders = data.Contents.filter(k => k.Size === 0)
+    const resultFolders = []
+    folders.map(val => resultFolders.push(val.Key.split('/')[0]))
+  
+    resultFolders.map(folder => {
+      const files = data.Contents.filter(k => k.Size !== 0)
+      files.every(val => { 
+        if (val.Key.split('.')[0] === `${folder}/${folder}`) {
+          result.push({folder: `${index}/${folder}`, image: `${index}/${val.Key}?token=${req.token}`})
+          return false
+        }
+        return true
       })
-      res.status(200);
-      res.json(result);
-      res.end();
-    }
-  });
+    })
+  }
+
+  res.status(200);
+  res.json(result);
+  res.end();
 })
 
-app.get('/api/:media', verifyToken, async (req, res, next) => {
-  const params = { Bucket: process.env.AWS_BUCKET_NAME };
+// List all photos in each folders in that bucket
+app.get('/api/:bucket/:media', verifyToken, async (req, res, next) => {
+  const buckets = process.env.AWS_BUCKET_NAME.split(',')
+  const params = { Bucket: buckets[req.params.bucket].trim() };
 
   s3.listObjectsV2(params, async function (err, data) {
     if (err) {
@@ -225,8 +227,8 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
             mp4Thumbnail = `${file.split('.')[0]}.png`
           } else if (file !== mp4Thumbnail) {
             result.push({
-              thumb: `${process.env.BASE_URI}/api/${file}?token=${req.token}`,
-              src: `${process.env.BASE_URI}/api/${file}?token=${req.token}`,
+              thumb: `${process.env.BASE_URI}/api/${req.params.bucket}/${file}?token=${req.token}`,
+              src: `${process.env.BASE_URI}/api/${req.params.bucket}/${file}?token=${req.token}`,
               caption: file.split('/')[1].split('.')[0].replace(regExPattern, ' ')
             })
             mp4Thumbnail = null
@@ -247,8 +249,10 @@ app.get('/api/:media', verifyToken, async (req, res, next) => {
   });
 })
 
-app.get('/api/:folder/:filename', verifyToken, async (req, res, next) => {
-  const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: `${req.params.folder}/${req.params.filename}` };
+// List the photo in that folder in that bucket
+app.get('/api/:bucket/:folder/:filename', verifyToken, async (req, res, next) => {
+  const buckets = process.env.AWS_BUCKET_NAME.split(',')
+  const params = { Bucket: buckets[req.params.bucket].trim(), Key: `${req.params.folder}/${req.params.filename}` };
 
   s3.getObject(params, function (err, data) {
     if (err) {
